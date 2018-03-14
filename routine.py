@@ -10,10 +10,12 @@ import socket
 import requests
 import boto3
 import coloredlogs, logging
+import pprint
 from datetime import datetime, timedelta
 from contextlib import closing
 from botocore.exceptions import ClientError, ParamValidationError
 from operator import itemgetter
+from termcolor import colored
 
 # EC2 Object
 ec2_resource = boto3.resource('ec2')
@@ -254,7 +256,8 @@ def format_as_table(data,
                     keys,
                     header=None,
                     sort_by_key=None,
-                    sort_order_reverse=False):
+                    sort_order_reverse=False,
+                    highlight_key_value=None):
     """Takes a list of dictionaries, formats the data, and returns
     the formatted data as a text table.
     https://www.calazan.com/python-function-for-displaying-a-list-of-dictionaries-in-table-format/
@@ -306,6 +309,11 @@ def format_as_table(data,
         # Create a tuple that will be used for the formatting in
         # width, value format
         for pair in key_width_pair:
+            # Colorize output by key
+            if pair[0] == highlight_key_value.keys()[0]:
+                for k in highlight_key_value.values()[0]:
+                    if element[pair[0]] == k[0]:
+                        element[pair[0]] = colored(element[pair[0]], k[1])
             data_to_format.append(pair[1])
             data_to_format.append(element[pair[0]])
         formatted_data += format % tuple(data_to_format)
@@ -369,12 +377,14 @@ def main():
     keys = ['instance_name', 'instance_fqdn', 'instance_id', 'is_socket_open', 'status_code', 'instance_state']
     sort_by_key = 'instance_fqdn'
     sort_order_reverse = False
+    highlight_key_value = {'instance_state':[['running', 'green'], ['stopped', 'red'], ['terminated', 'red']]}
 
-    logger.info("\n" + format_as_table(results,
+    logger.info("OUTPUT:\n" + format_as_table(results,
                           keys,
                           header,
                           sort_by_key,
-                          sort_order_reverse))
+                          sort_order_reverse,
+                          highlight_key_value))
     
     logger.info('Finished')
 
