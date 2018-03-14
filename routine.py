@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 __author__ = "Egor Egorenkov"
 __license__ = "GPL"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __maintainer__ = "Egor Egorenkov"
 __email__ = "it.manfred@gmail.com"
 __status__ = "Development"
@@ -376,7 +376,7 @@ def main():
     keys = ['instance_name', 'instance_fqdn', 'instance_id', 'is_socket_open', 'status_code', 'instance_state']
     sort_by_key = 'instance_fqdn'
     sort_order_reverse = False
-    highlight_key_value = {'instance_state':[['running', 'green'], ['stopped', 'red'], ['terminated', 'red']]}
+    highlight_key_value = {'instance_state':[['running', 'green'], ['stopped', 'red'], ['terminated', 'red'], ['stopping', 'yellow'], ['shutting-down', 'yellow'], ['pending', 'yellow']]}
 
     logger.info("OUTPUT:\n" + format_as_table(results,
                           keys,
