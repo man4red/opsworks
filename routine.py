@@ -10,7 +10,6 @@ import socket
 import requests
 import boto3
 import coloredlogs, logging
-import pprint
 from datetime import datetime, timedelta
 from contextlib import closing
 from botocore.exceptions import ClientError, ParamValidationError
