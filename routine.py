@@ -46,7 +46,7 @@ def get_http_status_code(host, port = 80, max_redirects = 3):
 
     try:
         session = requests.Session()
-        session.max_redirects = 3
+        session.max_redirects = max_redirects
 
         r = session.head(prefix + host, timeout=(2.34, 5.67), allow_redirects=True)
         try:
