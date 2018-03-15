@@ -28,6 +28,7 @@ coloredlogs.install(level='INFO', logger=logger, fmt=FORMAT)
 
 # VARIABLES
 http_valid_codes = [200, 201, 202, 203, 204, 205, 206, 300, 301, 302, 303, 304, 307, 308]
+do_log_output = True
 
 # FUNCTIONS
 def get_http_status_code(host, port = 80, max_redirects = 3):
@@ -256,7 +257,7 @@ def format_as_table(data,
                     header=None,
                     sort_by_key=None,
                     sort_order_reverse=False,
-                    highlight_key_value=None):
+                    highlight_key_value=False):
     """Takes a list of dictionaries, formats the data, and returns
     the formatted data as a text table.
     https://www.calazan.com/python-function-for-displaying-a-list-of-dictionaries-in-table-format/
@@ -309,10 +310,11 @@ def format_as_table(data,
         # width, value format
         for pair in key_width_pair:
             # Colorize output by key
-            if pair[0] == highlight_key_value.keys()[0]:
-                for k in highlight_key_value.values()[0]:
-                    if element[pair[0]] == k[0]:
-                        element[pair[0]] = colored(element[pair[0]], k[1])
+            if highlight_key_value:
+                if pair[0] == highlight_key_value.keys()[0]:
+                    for k in highlight_key_value.values()[0]:
+                        if element[pair[0]] == k[0]:
+                            element[pair[0]] = colored(element[pair[0]], k[1])
             data_to_format.append(pair[1])
             data_to_format.append(element[pair[0]])
         formatted_data += format % tuple(data_to_format)
@@ -378,12 +380,23 @@ def main():
     sort_order_reverse = False
     highlight_key_value = {'instance_state':[['running', 'green'], ['stopped', 'red'], ['terminated', 'red'], ['stopping', 'yellow'], ['shutting-down', 'yellow'], ['pending', 'yellow']]}
 
-    logger.info("OUTPUT:\n" + format_as_table(results,
+    # Log without colors... maybe there is a simpler way
+    # @TODO: refactor log without colors
+    if do_log_output:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("OUTPUT:\n" + format_as_table(results,
+                              keys,
+                              header,
+                              sort_by_key,
+                              sort_order_reverse))
+
+    # Print output to terminal
+    print "OUTPUT:\n" + format_as_table(results,
                           keys,
                           header,
                           sort_by_key,
                           sort_order_reverse,
-                          highlight_key_value))
+                          highlight_key_value)
     
     logger.info('Finished')
 
