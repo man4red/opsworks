@@ -9,7 +9,8 @@ __status__ = "Development"
 import socket
 import requests
 import boto3
-import coloredlogs, logging
+import logging
+import coloredlogs
 from datetime import datetime, timedelta
 from contextlib import closing
 from botocore.exceptions import ClientError, ParamValidationError
@@ -31,7 +32,7 @@ http_valid_codes = [200, 201, 202, 203, 204, 205, 206, 300, 301, 302, 303, 304, 
 do_log_output = True
 
 # FUNCTIONS
-def get_http_status_code(host, port = 80, max_redirects = 3):
+def get_http_status_code(host, port=80, max_redirects=3):
     """Get HTTP status code
     :param host: host
     :param port: port 80|443, default = 80
@@ -61,7 +62,7 @@ def get_http_status_code(host, port = 80, max_redirects = 3):
     return False
 
 
-def check_socket(host, port, timeout = 1):
+def check_socket(host, port, timeout=1):
     """Check socket
     :param host: host
     :param port: port
@@ -80,7 +81,7 @@ def check_socket(host, port, timeout = 1):
             return False
 
 
-def get_instances(key, value, state = ['running']):
+def get_instances(key, value, state=['running']):
     """Filter the running instances by given tag(team)
         http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#instance
     :param key: A string which is the key for the tag
@@ -125,17 +126,8 @@ def get_owned_images(key, value):
     :param value: value
     :return: ["Images"] response
     """
-    images = ec2_client.describe_images(
-        Owners=['self'],
-        Filters=[
-            {
-                'Name': key,
-                'Values': [
-                    value
-                ]
-            },
-        ]
-    )["Images"]
+    images = ec2_client.describe_images(Owners=['self'],
+            Filters=[{'Name': key, 'Values': [value]}])['Images']
     return images
 
 
@@ -149,23 +141,23 @@ def create_ami_and_add_tag(instance_id, instance_name):
     """
     create_time = datetime.now()
     create_fmt = create_time.strftime('%Y-%m-%d-%H-%M-%S')
-    name = instance_name + " - " + create_fmt
-    description = "Autocreated image: " + name
+    name = instance_name + ' - ' + create_fmt
+    description = 'Autocreated image: ' + name
     tag = None
     image_id = False
 
     image_id = ec2_client.create_image(
         InstanceId=instance_id,
-        Name="" + name + "",
-        Description="" + description + "",
+        Name='' + name + '',
+        Description='' + description + '',
         NoReboot=True,
         DryRun=False)['ImageId']
 
-    logger.info("Waiting for image %s to be created...", image_id)
+    logger.info('Waiting for image %s to be created...', image_id)
     waiter = ec2_client.get_waiter('image_available')
     waiter.wait(ImageIds=[image_id])
 
-    logger.info("Image %s created", image_id)
+    logger.info('Image %s created', image_id)
 
     if image_id:
         ec2_client.create_tags(
@@ -192,13 +184,13 @@ def terminate_instance(instance_id):
     :return: boolean
     """
     try:
-        logger.info("Terminating old instance %s", instance_id)
+        logger.info('Terminating old instance %s', instance_id)
 
         ec2_client.terminate_instances(
             InstanceIds=[instance_id],
             DryRun=False)
 
-        logger.info("Waiting while instance %s to be terminated...", instance_id)
+        logger.info('Waiting while instance %s to be terminated...', instance_id)
         waiter = ec2_client.get_waiter('instance_terminated')
         waiter.wait(InstanceIds=[instance_id])
 
@@ -209,7 +201,7 @@ def terminate_instance(instance_id):
     return True
 
 
-def clenup_old_ami(days = 7):
+def clenup_old_ami(days=7):
     """Delete old AMI
         @TODO: return dict|objects
         http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.Client.deregister_image
@@ -219,7 +211,7 @@ def clenup_old_ami(days = 7):
     logger.warn('Cleanup AMI older than %d', days)
 
     results = []
-    utc = datetime.utcnow() 
+    utc = datetime.utcnow()
 
     for image in get_owned_images('name', 'egor*'):
         image_id = image['ImageId']
@@ -228,7 +220,6 @@ def clenup_old_ami(days = 7):
         image_state = image['State']
         action = None
 
-        #testdatetime = datetime.datetime.strptime(image_created, "%Y-%m-%dT%H:%M:%S.%fZ")
         utc_image_created = datetime.strptime(image_created[:-5], "%Y-%m-%dT%H:%M:%S")
         date_N_days_ago = utc - timedelta(days=days)
 
@@ -250,7 +241,7 @@ def clenup_old_ami(days = 7):
             'image_name': image_name,
             'image_created': image_created,
             'image_state': image_state,
-            'action': action
+            'action': action,
         })
 
     return results
@@ -362,7 +353,7 @@ def main():
             'instance_id': instance_id,
             'is_socket_open': is_socket_open,
             'status_code': status_code,
-            'instance_state': instance_state
+            'instance_state': instance_state,
         })
 
     for result in results:
@@ -379,11 +370,32 @@ def main():
     clenup_result = clenup_old_ami(7)
 
     # OUTPUT
-    header = ['instance_name', 'instance_fqdn', 'instance_id', 'is_socket_open', 'status_code', 'instance_state']
-    keys = ['instance_name', 'instance_fqdn', 'instance_id', 'is_socket_open', 'status_code', 'instance_state']
+    header = [
+        'instance_name',
+        'instance_fqdn',
+        'instance_id',
+        'is_socket_open',
+        'status_code',
+        'instance_state',
+        ]
+    keys = [
+        'instance_name',
+        'instance_fqdn',
+        'instance_id',
+        'is_socket_open',
+        'status_code',
+        'instance_state',
+        ]
     sort_by_key = 'instance_fqdn'
     sort_order_reverse = False
-    highlight_key_value = {'instance_state':[['running', 'green'], ['stopped', 'red'], ['terminated', 'red'], ['stopping', 'yellow'], ['shutting-down', 'yellow'], ['pending', 'yellow']]}
+    highlight_key_value = {'instance_state': [
+        ['running', 'green'],
+        ['stopped', 'red'],
+        ['terminated', 'red'],
+        ['stopping', 'yellow'],
+        ['shutting-down', 'yellow'],
+        ['pending', 'yellow'],
+        ]}
 
     # Log without colors... maybe there is a simpler way
     # @TODO: refactor log without colors
