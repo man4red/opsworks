@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 __author__ = "Egor Egorenkov"
 __license__ = "GPL"
 __version__ = "1.0.2"
@@ -44,7 +45,6 @@ def get_http_status_code(host, port=80, max_redirects=3):
     else:
         logger.debug('Only 80 and 443 port is accepted. Let''s try 80 by default...')
         prefix = 'http://'
-
     try:
         session = requests.Session()
         session.max_redirects = max_redirects
@@ -56,7 +56,6 @@ def get_http_status_code(host, port=80, max_redirects=3):
         except:
             pass
         return r.status_code
-
     except requests.ConnectionError:
         return False
     return False
