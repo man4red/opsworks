@@ -69,7 +69,7 @@ def check_socket(host, port, timeout = 1):
     :return boolean
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(1)
+    s.settimeout(timeout)
 
     with closing(s) as sock:
         if sock.connect_ex((host, port)) == 0:
