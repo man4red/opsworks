@@ -117,6 +117,7 @@ def get_instances(key, value, state = ['running']):
         })
     return results
 
+
 def get_owned_images(key, value):
     """Get owned images (filter by key, value)
         http://boto3.readthedocs.io/en/latest/reference/services/ec2.html#EC2.Client.describe_images
@@ -137,6 +138,7 @@ def get_owned_images(key, value):
     )["Images"]
     return images
 
+
 # Create an AMI of the stopped EC2 instance and add a descriptive tag based on the EC2 name along with the current date
 def create_ami_and_add_tag(instance_id, instance_name):
     """Create AMI and add tag
@@ -151,7 +153,7 @@ def create_ami_and_add_tag(instance_id, instance_name):
     description = "Autocreated image: " + name
     tag = None
     image_id = False
-    
+
     image_id = ec2_client.create_image(
         InstanceId=instance_id,
         Name="" + name + "",
@@ -162,7 +164,7 @@ def create_ami_and_add_tag(instance_id, instance_name):
     logger.info("Waiting for image %s to be created...", image_id)
     waiter = ec2_client.get_waiter('image_available')
     waiter.wait(ImageIds=[image_id])
-    
+
     logger.info("Image %s created", image_id)
 
     if image_id:
@@ -181,6 +183,7 @@ def create_ami_and_add_tag(instance_id, instance_name):
     logger.info('Created AMI for instance %s (%s) with tags', instance_id, instance_name)
     return True
 
+
 def terminate_instance(instance_id):
     """Terminate instances
         @TODO: return dict|objects
@@ -194,16 +197,17 @@ def terminate_instance(instance_id):
         ec2_client.terminate_instances(
             InstanceIds=[instance_id],
             DryRun=False)
-            
+
         logger.info("Waiting while instance %s to be terminated...", instance_id)
         waiter = ec2_client.get_waiter('instance_terminated')
         waiter.wait(InstanceIds=[instance_id])
-            
+
         logger.info('Instance %s is terminated', instance_id)
     except ClientError as e:
         logger.error(e)
         return False
     return True
+
 
 def clenup_old_ami(days = 7):
     """Delete old AMI
@@ -223,11 +227,11 @@ def clenup_old_ami(days = 7):
         image_created = image['CreationDate']
         image_state = image['State']
         action = None
-        
+
         #testdatetime = datetime.datetime.strptime(image_created, "%Y-%m-%dT%H:%M:%S.%fZ")
         utc_image_created = datetime.strptime(image_created[:-5], "%Y-%m-%dT%H:%M:%S")
         date_N_days_ago = utc - timedelta(days=days)
-        
+
         if utc_image_created < date_N_days_ago:
             try:
                 ec2_client.deregister_image(
@@ -240,7 +244,7 @@ def clenup_old_ami(days = 7):
             
         else:
             logger.info("image %s (%s) is newer %d days", image_id, image_name, days)
-                
+
         results.append({
             'image_id': image_id,
             'image_name': image_name,
@@ -248,10 +252,10 @@ def clenup_old_ami(days = 7):
             'image_state': image_state,
             'action': action
         })
-    
+
     return results
 
-    
+
 def format_as_table(data,
                     keys,
                     header=None,
@@ -319,7 +323,8 @@ def format_as_table(data,
             data_to_format.append(element[pair[0]])
         formatted_data += format % tuple(data_to_format)
     return formatted_data
-    
+
+
 # MAIN
 def main():
     logger.info('Started')
@@ -350,7 +355,7 @@ def main():
                 logger.warn('Request check failed for host %s', instance_fqdn)
         else:
             logger.warn('Request check skipped for host %s (probably socket is closed)', instance_fqdn)
-        
+
         results.append({
             'instance_name': instance_name,
             'instance_fqdn': instance_fqdn,
@@ -397,7 +402,7 @@ def main():
                           sort_by_key,
                           sort_order_reverse,
                           highlight_key_value)
-    
+
     logger.info('Finished')
 
 if __name__ == '__main__':
